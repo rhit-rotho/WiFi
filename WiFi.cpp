@@ -137,8 +137,8 @@ bool WiFiClass::init()
     //
     //set the mode to station if it's not already in station mode
     //
-    if (iRet != ROLE_STA) {
-        sl_WlanSetMode(ROLE_STA);
+    if (iRet != role) {
+        sl_WlanSetMode(role);
         sl_Stop(0);
         sl_Start(NULL, NULL, NULL);
     }
@@ -447,9 +447,7 @@ int WiFiClass::beginNetwork(char *ssid)
     long   retVal = -1;
     int i;
 
-    if (!_initialized) {
-        init();
-    }
+    retVal = sl_Start(NULL, NULL, NULL);
 
     // Initialize the AP-mode Connected Device array
     WiFiClass::_connectedDeviceCount = 0;
@@ -460,16 +458,17 @@ int WiFiClass::beginNetwork(char *ssid)
         memset((uint8_t *)_connectedDevices[i].mac, 0, 6);
     }
 
-    retVal = sl_WlanSetMode(ROLE_AP);
-
     retVal = sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_SSID, strlen(ssid),
                             (unsigned char *)ssid);
 
-    /* Restart Network processor */
-    retVal = sl_Stop(30);
+    unsigned char  val = SL_SEC_TYPE_OPEN;
+    retVal = sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_SECURITY_TYPE, 1, (unsigned char *)&val);
 
     role = ROLE_AP;
-    return (retVal == 0 ? sl_Start(NULL, NULL, NULL) : retVal);
+    if (!_initialized) {
+        init();
+    }
+    return retVal;
 }
 
 int WiFiClass::beginNetwork(char *ssid, char *passphrase)
@@ -477,10 +476,8 @@ int WiFiClass::beginNetwork(char *ssid, char *passphrase)
     long   retVal = -1;
     int i;
 
-    if (!_initialized) {
-        init();
-    }
-
+    retVal = sl_Start(NULL, NULL, NULL);
+    
     // Initialize the AP-mode Connected Device array
     WiFiClass::_connectedDeviceCount = 0;
     _latestConnect = 0;
@@ -489,8 +486,6 @@ int WiFiClass::beginNetwork(char *ssid, char *passphrase)
         memset((uint8_t *)_connectedDevices[i].ipAddress, 0, 4);
         memset((uint8_t *)_connectedDevices[i].mac, 0, 6);
     }
-
-    retVal = sl_WlanSetMode(ROLE_AP);
 
     retVal = sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_SSID, strlen(ssid),
                             (unsigned char *)ssid);
@@ -501,11 +496,11 @@ int WiFiClass::beginNetwork(char *ssid, char *passphrase)
     retVal = sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_PASSWORD, strlen(passphrase),
                             (unsigned char *)passphrase);
 
-    /* Restart Network processor */
-    retVal = sl_Stop(30);
-
     role = ROLE_AP;
-    return (retVal == 0 ? sl_Start(NULL, NULL, NULL) : retVal);
+    if (!_initialized) {
+        init();
+    }
+    return retVal;
 }
 
 
