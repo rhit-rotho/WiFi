@@ -139,7 +139,7 @@ bool WiFiClass::init()
     //
     if (iRet != role) {
         sl_WlanSetMode(role);
-        sl_Stop(0);
+        // sl_Stop(0);
         sl_Start(NULL, NULL, NULL);
     }
     
@@ -278,6 +278,8 @@ int WiFiClass::begin(char* ssid)
     //
     //initialize the simplelink driver and make sure it was a success
     //
+    role = ROLE_STA;
+    _initialized=false;
     bool init_success = init();
     if (!init_success) {
         return WL_CONNECT_FAILED;
@@ -337,7 +339,7 @@ int WiFiClass::begin(char* ssid, uint8_t key_idx, char* key)
     //
     //initialize the simplelink driver and make sure it was a success
     //
-    bool init_success = WiFiClass::init();
+    bool init_success = init();
     if (!init_success) {
         return WL_CONNECT_FAILED;
     }
@@ -398,7 +400,10 @@ int WiFiClass::begin(char* ssid, char *passphrase)
     //
     // Set IP address configuration to DHCP if needed
     //
-    bool init_success = WiFiClass::init();
+
+    _initialized=false;
+    role=ROLE_STA;
+    bool init_success = init();
     if (!init_success) {
         return WL_CONNECT_FAILED;
     }
@@ -465,9 +470,8 @@ int WiFiClass::beginNetwork(char *ssid)
     retVal = sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_SECURITY_TYPE, 1, (unsigned char *)&val);
 
     role = ROLE_AP;
-    if (!_initialized) {
-        init();
-    }
+    _initialized = false;
+    init();
     return retVal;
 }
 
@@ -497,9 +501,8 @@ int WiFiClass::beginNetwork(char *ssid, char *passphrase)
                             (unsigned char *)passphrase);
 
     role = ROLE_AP;
-    if (!_initialized) {
-        init();
-    }
+    _initialized = false;
+    init();
     return retVal;
 }
 
@@ -825,9 +828,10 @@ uint8_t WiFiClass::encryptionType()
 //--tested, working--//
 int8_t WiFiClass::scanNetworks()
 {
-    if (!_initialized) {
-        init();
-    }
+    role = ROLE_STA;
+    _initialized = false;
+    init();
+
 
     const int WLAN_SCAN_COUNT = 20;
     int iRet;
